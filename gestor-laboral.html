@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestor Derecho Laboral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1A1D23;
+    --bg-raised: #22262E;
+    --bg-card: #262B34;
+    --border: #383E4A;
+    --border-soft: #2E333D;
+    --bone: #E8E4DC;
+    --bone-dim: #A8A49C;
+    --gold: #C9A15C;
+    --gold-dim: #8A7247;
+    --jade: #5B8C7B;
+    --terracotta: #B5533C;
+    --terracotta-bg: rgba(181, 83, 60, 0.12);
+    --jade-bg: rgba(91, 140, 123, 0.12);
+    --gold-bg: rgba(201, 161, 92, 0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--bone);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: var(--gold-dim); color: var(--bg); }
+
+  button, input, textarea, select {
+    font-family: inherit;
+    color: inherit;
+    outline: none;
+  }
+
+  button { cursor: pointer; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, a:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+
+  /* ---------- Header ---------- */
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(26, 29, 35, 0.94);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-soft);
+    padding: 14px 18px 0;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 10px;
+  }
+
+  .brand {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: 0.2px;
+    color: var(--bone);
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .brand .mark { color: var(--gold); font-style: italic; font-weight: 500; }
+
+  .header-sub {
+    font-size: 10.5px;
+    color: var(--bone-dim);
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 4px 12px;
+    margin-right: 22px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--bone-dim);
+    font-family: 'Lora', serif;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab-btn:hover:not(.active) { color: var(--bone); }
+
+  main { max-width: 720px; margin: 0 auto; padding: 18px 16px 100px; }
+
+  .view { display: none; }
+  .view.active { display: block; animation: fadein 0.25s ease; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ---------- Shared bits ---------- */
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--gold-dim);
+    font-weight: 600;
+    margin: 22px 0 10px;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  .empty-state {
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 28px 18px;
+    text-align: center;
+    color: var(--bone-dim);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .empty-state strong { color: var(--bone); display: block; margin-bottom: 4px; font-family: 'Lora', serif; font-size: 15px; }
+
+  /* ---------- Cases view ---------- */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .stat-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .stat-num { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; color: var(--gold); }
+  .stat-num.urgent { color: var(--terracotta); }
+  .stat-label { font-size: 10px; color: var(--bone-dim); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+
+  .add-btn {
+    width: 100%;
+    background: var(--gold);
+    color: #1A1D23;
+    border: none;
+    border-radius: 10px;
+    padding: 13px;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 20px;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .add-btn:hover { background: #D9B36E; }
+  .add-btn:active { transform: scale(0.99); }
+
+  .case-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 15px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  .case-card:hover { border-color: var(--gold-dim); }
+  .case-card.deadline-urgent { border-left-color: var(--terracotta); }
+  .case-card.deadline-soon { border-left-color: var(--gold); }
+  .case-card.deadline-ok { border-left-color: var(--jade); }
+
+  .case-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+  .case-name { font-family: 'Lora', serif; font-weight: 600; font-size: 15px; color: var(--bone); }
+  .case-type-tag {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--bone-dim);
+    background: var(--bg-raised);
+    padding: 2px 7px;
+    border-radius: 5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .case-meta { font-size: 12.5px; color: var(--bone-dim); margin-bottom: 8px; }
+  .case-deadline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+  .case-deadline.urgent { background: var(--terracotta-bg); color: var(--terracotta); }
+  .case-deadline.soon { background: var(--gold-bg); color: var(--gold); }
+  .case-deadline.ok { background: var(--jade-bg); color: var(--jade); }
+  .case-deadline.none { color: var(--bone-dim); }
+
+  /* ---------- Case detail modal ---------- */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(10, 11, 14, 0.72);
+    z-index: 50;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.active { display: flex; animation: fadein 0.2s ease; }
+  .modal-sheet {
+    background: var(--bg-raised);
+    border-top: 1px solid var(--border);
+    border-radius: 18px 18px 0 0;
+    width: 100%;
+    max-width: 720px;
+    max-height: 92vh;
+    overflow-y: auto;
+    padding: 20px 18px 30px;
+  }
+  @media (min-width: 640px) {
+    .modal-overlay { align-items: center; padding: 20px; }
+    .modal-sheet { border-radius: 16px; max-height: 88vh; }
+  }
+
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .modal-title { font-family: 'Lora', serif; font-weight: 700; font-size: 18px; }
+  .close-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    width: 32px; height: 32px;
+    font-size: 16px;
+    color: var(--bone-dim);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .close-btn:hover { color: var(--bone); border-color: var(--gold-dim); }
+
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 11.5px; color: var(--bone-dim); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; display: block; font-weight: 600; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 12px;
+    font-size: 14px;
+    color: var(--bone);
+  }
+  .form-input::placeholder, .form-textarea::placeholder { color: #6B6F79; }
+  .form-textarea { resize: vertical; min-height: 70px; font-family: 'Inter', sans-serif; line-height: 1.5; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .modal-actions { display: flex; gap: 8px; margin-top: 18px; }
+  .btn-primary {
+    flex: 1;
+    background: var(--gold);
+    color: #1A1D23;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-weight: 700;
+    font-size: 13.5px;
+  }
+  .btn-primary:hover { background: #D9B36E; }
+  .btn-danger {
+    background: none;
+    border: 1px solid var(--terracotta);
+    color: var(--terracotta);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 13.5px;
+  }
+  .btn-danger:hover { background: var(--terracotta-bg); }
+  .btn-secondary {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--bone);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .btn-secondary:hover { border-color: var(--gold-dim); }
+
+  .detail-block { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-soft); }
+  .detail-block:last-of-type { border-bottom: none; }
+  .detail-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gold-dim); font-weight: 700; margin-bottom: 6px; }
+  .detail-value { font-size: 14px; line-height: 1.55; color: var(--bone); white-space: pre-wrap; }
+  .detail-value.empty { color: #6B6F79; font-style: italic; }
+
+  .note-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .note-date { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--gold-dim); margin-bottom: 4px; }
+  .note-text { font-size: 13.5px; line-height: 1.5; }
+
+  /* ---------- CST view ---------- */
+  .search-box {
+    position: relative;
+    margin-bottom: 18px;
+  }
+  .search-input {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 14px 13px 40px;
+    font-size: 14.5px;
+    color: var(--bone);
+  }
+  .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--bone-dim); font-size: 15px; }
+
+  .quick-links {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 20px;
+    scrollbar-width: none;
+  }
+  .quick-links::-webkit-scrollbar { display: none; }
+  .quick-link {
+    flex-shrink: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    color: var(--bone-dim);
+    border-radius: 20px;
+    padding: 7px 13px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .quick-link:hover { border-color: var(--gold-dim); color: var(--bone); }
+  .quick-link.official { color: var(--gold); }
+
+  .article-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    display: flex;
+  }
+  .article-num-tab {
+    background: var(--bg-raised);
+    border-right: 1px solid var(--border-soft);
+    padding: 14px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 58px;
+    flex-shrink: 0;
+  }
+  .article-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--gold);
+  }
+  .article-num-label { font-size: 8px; text-transform: uppercase; color: var(--bone-dim); letter-spacing: 0.3px; margin-top: 2px; text-align: center; }
+  .article-body { padding: 13px 14px; flex: 1; min-width: 0; }
+  .article-title { font-family: 'Lora', serif; font-weight: 600; font-size: 14.5px; color: var(--bone); margin-bottom: 5px; }
+  .article-text { font-size: 13.5px; line-height: 1.6; color: var(--bone-dim); }
+  .article-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 8px; }
+  .article-source-link { font-size: 11px; color: var(--gold-dim); text-decoration: none; }
+  .article-source-link:hover { color: var(--gold); text-decoration: underline; }
+  .article-remove { background: none; border: none; color: #6B6F79; font-size: 11px; }
+  .article-remove:hover { color: var(--terracotta); }
+
+  .add-article-btn {
+    width: 100%;
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--bone-dim);
+    border-radius: 10px;
+    padding: 13px;
+    font-size: 13.5px;
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
+  .add-article-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+  .official-banner {
+    background: var(--gold-bg);
+    border: 1px solid var(--gold-dim);
+    border-radius: 10px;
+    padding: 13px 14px;
+    margin-bottom: 18px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--bone);
+  }
+  .official-banner a { color: var(--gold); font-weight: 600; }
+  .official-banner strong { font-family: 'Lora', serif; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg-card);
+    border: 1px solid var(--gold-dim);
+    color: var(--bone);
+    padding: 11px 20px;
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 100;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .loading-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-top">
+    <div>
+      <div class="brand">Legajo <span class="mark">Laboral</span></div>
+      <div class="header-sub">Gestión de casos &amp; Código Sustantivo del Trabajo</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" data-view="cases">Casos</button>
+    <button class="tab-btn" data-view="code">Código</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ===================== CASES VIEW ===================== -->
+  <section class="view active" id="view-cases">
+    <div class="stats-row" id="stats-row"></div>
+
+    <button class="add-btn" id="btn-new-case">+ Nuevo caso</button>
+
+    <div class="section-label">Expedientes</div>
+    <div id="case-list"></div>
+  </section>
+
+  <!-- ===================== CODE VIEW ===================== -->
+  <section class="view" id="view-code">
+    <div class="official-banner">
+      <strong>Fuente oficial:</strong> para el texto completo y vigente del Código Sustantivo del Trabajo, consulta siempre
+      <a href="https://www.suin-juriscol.gov.co/viewDocument.asp?id=1607431" target="_blank" rel="noopener">SUIN-Juriscol</a>
+      o <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=33104" target="_blank" rel="noopener">Función Pública</a>.
+      Aquí puedes guardar los artículos que más consultas, con tu propio texto o enlace directo.
+    </div>
+
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="search-articles" placeholder="Buscar por número, título o palabra clave…">
+    </div>
+
+    <div class="quick-links">
+      <a class="quick-link official" href="https://www.suin-juriscol.gov.co/viewDocument.asp?id=1607431" target="_blank" rel="noopener">SUIN-Juriscol ↗</a>
+      <a class="quick-link official" href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=33104" target="_blank" rel="noopener">Función Pública ↗</a>
+      <a class="quick-link official" href="https://www.mintrabajo.gov.co/normatividad" target="_blank" rel="noopener">MinTrabajo ↗</a>
+      <a class="quick-link official" href="https://www.corteconstitucional.gov.co/relatoria/" target="_blank" rel="noopener">Corte Constitucional ↗</a>
+    </div>
+
+    <button class="add-article-btn" id="btn-new-article">+ Guardar artículo, decreto o ley</button>
+
+    <div class="section-label">Tus artículos guardados</div>
+    <div id="article-list"></div>
+  </section>
+
+</main>
+
+<!-- ===================== CASE MODAL ===================== -->
+<div class="modal-overlay" id="modal-case">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <div class="modal-title" id="case-modal-title">Nuevo caso</div>
+      <button class="close-btn" data-close="modal-case">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Nombre del cliente / caso</label>
+      <input type="text" class="form-input" id="f-name" placeholder="Ej: Juan Pérez vs. Textiles del Cauca S.A.S.">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Tipo de proceso</label>
+        <select class="form-select" id="f-type">
+          <option>Despido injustificado</option>
+          <option>Liquidación / prestaciones</option>
+          <option>Accidente de trabajo</option>
+          <option>Enfermedad laboral</option>
+          <option>Acoso laboral</option>
+          <option>Seguridad social / pensión</option>
+          <option>Contrato / vinculación</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Estado</label>
+        <select class="form-select" id="f-status">
+          <option>Consulta inicial</option>
+          <option>Reclamación administrativa</option>
+          <option>Conciliación</option>
+          <option>Demanda radicada</option>
+          <option>En audiencia</option>
+          <option>Cerrado</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Próximo plazo o audiencia (opcional)</label>
+      <input type="date" class="form-input" id="f-deadline">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Descripción / hechos</label>
+      <textarea class="form-textarea" id="f-desc" placeholder="Resumen de los hechos, pretensiones, cuantía…"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-primary" id="btn-save-case">Guardar caso</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CASE DETAIL MODAL ===================== -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <div class="modal-title" id="detail-title">Caso</div>
+      <button class="close-btn" data-close="modal-detail">✕</button>
+    </div>
+
+    <div class="detail-block">
+      <div class="detail-label">Tipo de proceso</div>
+      <div class="detail-value" id="detail-type"></div>
+    </div>
+    <div class="detail-block">
+      <div class="detail-label">Estado</div>
+      <div class="detail-value" id="detail-status"></div>
+    </div>
+    <div class="detail-block">
+      <div class="detail-label">Próximo plazo</div>
+      <div class="detail-value" id="detail-deadline"></div>
+    </div>
+    <div class="detail-block">
+      <div class="detail-label">Descripción</div>
+      <div class="detail-value" id="detail-desc"></div>
+    </div>
+
+    <div class="detail-block">
+      <div class="detail-label">Bitácora / notas de audiencias</div>
+      <div id="notes-list"></div>
+      <div class="form-group" style="margin-top:10px;">
+        <textarea class="form-textarea" id="f-new-note" placeholder="Agregar nota (ej: resultado de audiencia, acuerdo, próximo paso)…" style="min-height: 55px;"></textarea>
+      </div>
+      <button class="btn-secondary" id="btn-add-note">+ Agregar nota</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" id="btn-edit-case">Editar datos</button>
+      <button class="btn-danger" id="btn-delete-case">Eliminar caso</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== ARTICLE MODAL ===================== -->
+<div class="modal-overlay" id="modal-article">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <div class="modal-title">Guardar artículo / norma</div>
+      <button class="close-btn" data-close="modal-article">✕</button>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Número (Art. / Decreto / Ley)</label>
+        <input type="text" class="form-input" id="a-num" placeholder="Ej: Art. 64 CST">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categoría</label>
+        <select class="form-select" id="a-cat">
+          <option>Contrato de trabajo</option>
+          <option>Terminación / despido</option>
+          <option>Prestaciones sociales</option>
+          <option>Jornada y salario</option>
+          <option>Seguridad social</option>
+          <option>SG-SST</option>
+          <option>Procedimiento</option>
+          <option>Jurisprudencia</option>
+          <option>Otro</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Título / tema</label>
+      <input type="text" class="form-input" id="a-title" placeholder="Ej: Indemnización por despido sin justa causa">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Texto o resumen (tu propia nota — no se genera automáticamente)</label>
+      <textarea class="form-textarea" id="a-text" placeholder="Pega aquí el texto oficial verificado, o escribe tu propio resumen…" style="min-height: 100px;"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Enlace a la fuente oficial (opcional)</label>
+      <input type="text" class="form-input" id="a-link" placeholder="https://www.suin-juriscol.gov.co/…">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-primary" id="btn-save-article">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  // ---------- State ----------
+  let cases = [];
+  let articles = [];
+  let editingCaseId = null;
+  let activeDetailId = null;
+
+  // ---------- Storage helpers ----------
+  async function loadData() {
+    try {
+      const c = await window.storage.get('cases');
+      cases = c ? JSON.parse(c.value) : [];
+    } catch (e) { cases = []; }
+    try {
+      const a = await window.storage.get('articles');
+      articles = a ? JSON.parse(a.value) : seedArticles();
+      if (!a) await saveArticles();
+    } catch (e) { articles = seedArticles(); await saveArticles(); }
+    renderCases();
+    renderArticles();
+  }
+
+  function seedArticles() {
+    return [
+      {
+        id: 'seed1',
+        num: 'Art. 64 CST',
+        cat: 'Terminación / despido',
+        title: 'Indemnización por terminación unilateral sin justa causa',
+        text: 'Regula la indemnización que debe pagar el empleador cuando termina el contrato sin justa causa comprobada. Consulta el texto vigente en la fuente oficial — la tabla de indemnización varía según el tipo de contrato y el tiempo de servicio.',
+        link: 'https://www.suin-juriscol.gov.co/viewDocument.asp?id=1607431'
+      },
+      {
+        id: 'seed2',
+        num: 'Art. 65 CST',
+        cat: 'Terminación / despido',
+        title: 'Indemnización moratoria por no pago de salarios y prestaciones',
+        text: 'Sanción al empleador que no paga salarios y prestaciones al finalizar el contrato. Verifica el valor diario vigente y los términos exactos en la fuente oficial.',
+        link: 'https://www.suin-juriscol.gov.co/viewDocument.asp?id=1607431'
+      }
+    ];
+  }
+
+  async function saveCases() {
+    await window.storage.set('cases', JSON.stringify(cases));
+  }
+  async function saveArticles() {
+    await window.storage.set('articles', JSON.stringify(articles));
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('view-' + btn.dataset.view).classList.add('active');
+    });
+  });
+
+  // ---------- Modal open/close ----------
+  function openModal(id) { document.getElementById(id).classList.add('active'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => closeModal(btn.dataset.close));
+  });
+  document.querySelectorAll('.modal-overlay').forEach(ov => {
+    ov.addEventListener('click', (e) => { if (e.target === ov) ov.classList.remove('active'); });
+  });
+
+  // ---------- Deadline urgency ----------
+  function deadlineStatus(dateStr) {
+    if (!dateStr) return 'none';
+    const today = new Date(); today.setHours(0,0,0,0);
+    const d = new Date(dateStr + 'T00:00:00');
+    const diffDays = Math.round((d - today) / 86400000);
+    if (diffDays < 0) return 'urgent';
+    if (diffDays <= 5) return 'urgent';
+    if (diffDays <= 15) return 'soon';
+    return 'ok';
+  }
+  function formatDate(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  function deadlineLabel(dateStr) {
+    const status = deadlineStatus(dateStr);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const d = new Date(dateStr + 'T00:00:00');
+    const diffDays = Math.round((d - today) / 86400000);
+    if (status === 'urgent' && diffDays < 0) return `Vencido · ${formatDate(dateStr)}`;
+    if (status === 'urgent') return `${diffDays === 0 ? 'Hoy' : diffDays + ' días'} · ${formatDate(dateStr)}`;
+    return formatDate(dateStr);
+  }
+
+  // ---------- Render stats ----------
+  function renderStats() {
+    const total = cases.length;
+    const active = cases.filter(c => c.status !== 'Cerrado').length;
+    const urgent = cases.filter(c => deadlineStatus(c.deadline) === 'urgent').length;
+    document.getElementById('stats-row').innerHTML = `
+      <div class="stat-box"><div class="stat-num">${total}</div><div class="stat-label">Total</div></div>
+      <div class="stat-box"><div class="stat-num">${active}</div><div class="stat-label">Activos</div></div>
+      <div class="stat-box"><div class="stat-num ${urgent ? 'urgent' : ''}">${urgent}</div><div class="stat-label">Plazos urgentes</div></div>
+    `;
+  }
+
+  // ---------- Render cases ----------
+  function renderCases() {
+    renderStats();
+    const list = document.getElementById('case-list');
+    if (!cases.length) {
+      list.innerHTML = `<div class="empty-state"><strong>Sin expedientes todavía</strong>Crea tu primer caso para empezar a llevar el control de plazos y audiencias.</div>`;
+      return;
+    }
+    const sorted = [...cases].sort((a, b) => {
+      const sa = deadlineStatus(a.deadline), sb = deadlineStatus(b.deadline);
+      const order = { urgent: 0, soon: 1, ok: 2, none: 3 };
+      return order[sa] - order[sb];
+    });
+    list.innerHTML = sorted.map(c => {
+      const status = deadlineStatus(c.deadline);
+      return `
+        <div class="case-card deadline-${status}" data-id="${c.id}">
+          <div class="case-top">
+            <div class="case-name">${escapeHtml(c.name)}</div>
+            <div class="case-type-tag">${escapeHtml(c.type)}</div>
+          </div>
+          <div class="case-meta">${escapeHtml(c.status)}</div>
+          ${c.deadline
+            ? `<span class="case-deadline ${status}">📅 ${deadlineLabel(c.deadline)}</span>`
+            : `<span class="case-deadline none">Sin plazo asignado</span>`}
+        </div>
+      `;
+    }).join('');
+    list.querySelectorAll('.case-card').forEach(card => {
+      card.addEventListener('click', () => openDetail(card.dataset.id));
+    });
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+  }
+
+  // ---------- New case ----------
+  document.getElementById('btn-new-case').addEventListener('click', () => {
+    editingCaseId = null;
+    document.getElementById('case-modal-title').textContent = 'Nuevo caso';
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-type').selectedIndex = 0;
+    document.getElementById('f-status').selectedIndex = 0;
+    document.getElementById('f-deadline').value = '';
+    document.getElementById('f-desc').value = '';
+    openModal('modal-case');
+  });
+
+  document.getElementById('btn-save-case').addEventListener('click', async () => {
+    const name = document.getElementById('f-name').value.trim();
+    if (!name) { showToast('Escribe el nombre del cliente o caso'); return; }
+    const data = {
+      name,
+      type: document.getElementById('f-type').value,
+      status: document.getElementById('f-status').value,
+      deadline: document.getElementById('f-deadline').value,
+      desc: document.getElementById('f-desc').value.trim(),
+      notes: editingCaseId ? (cases.find(c => c.id === editingCaseId)?.notes || []) : []
+    };
+    if (editingCaseId) {
+      const idx = cases.findIndex(c => c.id === editingCaseId);
+      cases[idx] = { ...cases[idx], ...data };
+      showToast('Caso actualizado');
+    } else {
+      data.id = 'case_' + Date.now();
+      cases.push(data);
+      showToast('Caso guardado');
+    }
+    await saveCases();
+    renderCases();
+    closeModal('modal-case');
+    if (editingCaseId) { closeModal('modal-detail'); }
+  });
+
+  // ---------- Case detail ----------
+  function openDetail(id) {
+    const c = cases.find(x => x.id === id);
+    if (!c) return;
+    activeDetailId = id;
+    document.getElementById('detail-title').textContent = c.name;
+    document.getElementById('detail-type').textContent = c.type;
+    document.getElementById('detail-status').textContent = c.status;
+    const dEl = document.getElementById('detail-deadline');
+    if (c.deadline) {
+      dEl.textContent = deadlineLabel(c.deadline);
+      dEl.className = 'detail-value';
+    } else {
+      dEl.textContent = 'Sin plazo asignado';
+      dEl.className = 'detail-value empty';
+    }
+    const descEl = document.getElementById('detail-desc');
+    descEl.textContent = c.desc || 'Sin descripción.';
+    descEl.className = c.desc ? 'detail-value' : 'detail-value empty';
+    renderNotes(c);
+    openModal('modal-detail');
+  }
+
+  function renderNotes(c) {
+    const list = document.getElementById('notes-list');
+    if (!c.notes || !c.notes.length) {
+      list.innerHTML = `<div class="detail-value empty" style="margin-bottom:8px;">Sin notas aún.</div>`;
+      return;
+    }
+    list.innerHTML = [...c.notes].reverse().map(n => `
+      <div class="note-item">
+        <div class="note-date">${n.date}</div>
+        <div class="note-text">${escapeHtml(n.text)}</div>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('btn-add-note').addEventListener('click', async () => {
+    const text = document.getElementById('f-new-note').value.trim();
+    if (!text) return;
+    const c = cases.find(x => x.id === activeDetailId);
+    if (!c) return;
+    if (!c.notes) c.notes = [];
+    c.notes.push({ text, date: new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) });
+    await saveCases();
+    document.getElementById('f-new-note').value = '';
+    renderNotes(c);
+    showToast('Nota agregada');
+  });
+
+  document.getElementById('btn-edit-case').addEventListener('click', () => {
+    const c = cases.find(x => x.id === activeDetailId);
+    if (!c) return;
+    editingCaseId = c.id;
+    document.getElementById('case-modal-title').textContent = 'Editar caso';
+    document.getElementById('f-name').value = c.name;
+    document.getElementById('f-type').value = c.type;
+    document.getElementById('f-status').value = c.status;
+    document.getElementById('f-deadline').value = c.deadline || '';
+    document.getElementById('f-desc').value = c.desc || '';
+    openModal('modal-case');
+  });
+
+  document.getElementById('btn-delete-case').addEventListener('click', async () => {
+    if (!activeDetailId) return;
+    cases = cases.filter(c => c.id !== activeDetailId);
+    await saveCases();
+    renderCases();
+    closeModal('modal-detail');
+    showToast('Caso eliminado');
+  });
+
+  // ---------- Articles ----------
+  function renderArticles(filter) {
+    const list = document.getElementById('article-list');
+    let items = articles;
+    if (filter) {
+      const f = filter.toLowerCase();
+      items = articles.filter(a =>
+        (a.num || '').toLowerCase().includes(f) ||
+        (a.title || '').toLowerCase().includes(f) ||
+        (a.text || '').toLowerCase().includes(f) ||
+        (a.cat || '').toLowerCase().includes(f)
+      );
+    }
+    if (!items.length) {
+      list.innerHTML = `<div class="empty-state"><strong>${filter ? 'Sin resultados' : 'Sin artículos guardados'}</strong>${filter ? 'Prueba con otro término de búsqueda.' : 'Guarda los artículos, decretos o leyes que más consultas para tenerlos siempre a la mano.'}</div>`;
+      return;
+    }
+    list.innerHTML = items.map(a => `
+      <div class="article-card">
+        <div class="article-num-tab">
+          <div class="article-num">${escapeHtml(shortNum(a.num))}</div>
+          <div class="article-num-label">${escapeHtml(a.cat).split(' ')[0]}</div>
+        </div>
+        <div class="article-body">
+          <div class="article-title">${escapeHtml(a.title)}</div>
+          <div class="article-text">${escapeHtml(a.text)}</div>
+          <div class="article-footer">
+            ${a.link ? `<a class="article-source-link" href="${escapeHtml(a.link)}" target="_blank" rel="noopener">Ver fuente oficial ↗</a>` : '<span></span>'}
+            <button class="article-remove" data-id="${a.id}">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+    list.querySelectorAll('.article-remove').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        articles = articles.filter(a => a.id !== btn.dataset.id);
+        await saveArticles();
+        renderArticles(document.getElementById('search-articles').value);
+        showToast('Artículo eliminado');
+      });
+    });
+  }
+
+  function shortNum(num) {
+    if (!num) return '§';
+    const m = num.match(/\d+/);
+    return m ? m[0] : num.slice(0, 4);
+  }
+
+  document.getElementById('search-articles').addEventListener('input', (e) => {
+    renderArticles(e.target.value);
+  });
+
+  document.getElementById('btn-new-article').addEventListener('click', () => {
+    document.getElementById('a-num').value = '';
+    document.getElementById('a-cat').selectedIndex = 0;
+    document.getElementById('a-title').value = '';
+    document.getElementById('a-text').value = '';
+    document.getElementById('a-link').value = '';
+    openModal('modal-article');
+  });
+
+  document.getElementById('btn-save-article').addEventListener('click', async () => {
+    const title = document.getElementById('a-title').value.trim();
+    const num = document.getElementById('a-num').value.trim();
+    if (!title || !num) { showToast('Completa el número y el título'); return; }
+    articles.unshift({
+      id: 'art_' + Date.now(),
+      num,
+      cat: document.getElementById('a-cat').value,
+      title,
+      text: document.getElementById('a-text').value.trim() || 'Sin texto guardado — consulta la fuente oficial.',
+      link: document.getElementById('a-link').value.trim()
+    });
+    await saveArticles();
+    renderArticles(document.getElementById('search-articles').value);
+    closeModal('modal-article');
+    showToast('Artículo guardado');
+  });
+
+  loadData();
+})();
+</script>
+</body>
+</html>
